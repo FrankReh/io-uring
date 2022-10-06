@@ -189,7 +189,23 @@ impl<E: EntryMarker> SubmissionQueue<'_, E> {
     /// threads has gone to sleep and requires a system call to wake it up.
     #[inline]
     pub fn need_wakeup(&self) -> bool {
+        // TODO investigate whether Rust should also perform this fence, as liburing did
+        // in commit 744f41, https://github.com/axboe/liburing/commit/744f4156b25d8630fee279cfd852ecc4c73952d4, for issue
+        // which fixes https://github.com/axboe/liburing/issues/541
+        //
+        // /*
+        //  * Ensure the kernel can see the store to the SQ tail before we read
+        //  * the flags.
+        //  */
+        // io_uring_smp_mb();
+        // where the macro has this declaration
+        // #define io_uring_smp_mb()
+        //   atomic_thread_fence(memory_order_seq_cst)
+        // so
+        // atomic::fence(atomic::Ordering::SeqCst);
+
         unsafe {
+            atomic::fence(atomic::Ordering::SeqCst);
             (*self.queue.flags).load(atomic::Ordering::Acquire) & sys::IORING_SQ_NEED_WAKEUP != 0
         }
     }
@@ -203,6 +219,7 @@ impl<E: EntryMarker> SubmissionQueue<'_, E> {
     /// Returns `true` if the completion queue ring is overflown.
     pub fn cq_overflow(&self) -> bool {
         unsafe {
+            atomic::fence(atomic::Ordering::SeqCst);
             (*self.queue.flags).load(atomic::Ordering::Acquire) & sys::IORING_SQ_CQ_OVERFLOW != 0
         }
     }

@@ -60,6 +60,7 @@ impl<'a> Submitter<'a> {
     #[inline]
     fn sq_need_wakeup(&self) -> bool {
         unsafe {
+            atomic::fence(atomic::Ordering::SeqCst); // Refer to comment in squeue.rs for same code
             (*self.sq_flags).load(atomic::Ordering::Acquire) & sys::IORING_SQ_NEED_WAKEUP != 0
         }
     }

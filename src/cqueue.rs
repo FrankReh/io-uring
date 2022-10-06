@@ -106,6 +106,7 @@ impl<E: EntryMarker> CompletionQueue<'_, E> {
     #[inline]
     pub fn sync(&mut self) {
         unsafe {
+            atomic::fence(atomic::Ordering::SeqCst); // TODO is this required?
             (*self.queue.head).store(self.head, atomic::Ordering::Release);
             self.tail = (*self.queue.tail).load(atomic::Ordering::Acquire);
         }
@@ -114,7 +115,10 @@ impl<E: EntryMarker> CompletionQueue<'_, E> {
     /// If queue is full and [`is_feature_nodrop`](crate::Parameters::is_feature_nodrop) is not set,
     /// new events may be dropped. This records the number of dropped events.
     pub fn overflow(&self) -> u32 {
-        unsafe { (*self.queue.overflow).load(atomic::Ordering::Acquire) }
+        unsafe {
+            atomic::fence(atomic::Ordering::SeqCst); // TODO is this required?
+            (*self.queue.overflow).load(atomic::Ordering::Acquire)
+        }
     }
 
     /// Whether eventfd notifications are disabled when a request is completed and queued to the CQ
@@ -125,6 +129,7 @@ impl<E: EntryMarker> CompletionQueue<'_, E> {
     #[cfg(feature = "unstable")]
     pub fn eventfd_disabled(&self) -> bool {
         unsafe {
+            atomic::fence(atomic::Ordering::SeqCst); // TODO is this required?
             (*self.queue.flags).load(atomic::Ordering::Acquire) & sys::IORING_CQ_EVENTFD_DISABLED
                 != 0
         }
@@ -176,7 +181,9 @@ impl<E: EntryMarker> CompletionQueue<'_, E> {
 impl<E: EntryMarker> Drop for CompletionQueue<'_, E> {
     #[inline]
     fn drop(&mut self) {
-        unsafe { &*self.queue.head }.store(self.head, atomic::Ordering::Release);
+        unsafe {
+            atomic::fence(atomic::Ordering::SeqCst); // TODO is this required?
+            &*self.queue.head }.store(self.head, atomic::Ordering::Release);
     }
 }
 
