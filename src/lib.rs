@@ -448,6 +448,13 @@ impl Parameters {
     /// it](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=d7718a9d25a61442da8ee8aeeff6a0097f0ccfd6)
     /// for more details.
     ///
+    /// If this flag is set, then io_uring supports using an internal poll mechanism to drive
+    /// data/space readiness. This means that requests that cannot read or write data to a file no
+    /// longer need to be punted to an async thread for handling, instead they will begin operation
+    /// when the file is ready. This is similar to doing poll + read/write in userspace, but
+    /// eliminates the need to do so. If this flag is set, requests waiting on space/data consume a
+    /// lot less resources doing so as they are not blocking a thread. Available since kernel 5.7.
+    ///
     /// Requires the `unstable` feature.
     #[cfg(feature = "unstable")]
     pub fn is_feature_fast_poll(&self) -> bool {
@@ -456,20 +463,45 @@ impl Parameters {
 
     /// Whether poll events are stored using 32 bits instead of 16. This allows the user to use
     /// `EPOLLEXCLUSIVE`.
+    ///
+    /// If this flag is set, the IORING_OP_POLL_ADD command accepts the full 32-bit range of epoll
+    /// based flags. Most notably EPOLLEXCLUSIVE which allows exclusive (waking single waiters)
+    /// behavior. Available since kernel 5.9.
     pub fn is_feature_poll_32bits(&self) -> bool {
         self.0.features & sys::IORING_FEAT_POLL_32BITS != 0
     }
 
+    /// If this flag is set, the IORING_SETUP_SQPOLL feature no longer requires the use of fixed
+    /// files. Any normal file descriptor can be used for IO commands without needing registration.
+    /// Available since kernel 5.11.
     #[cfg(feature = "unstable")]
     pub fn is_feature_sqpoll_nonfixed(&self) -> bool {
         self.0.features & sys::IORING_FEAT_SQPOLL_NONFIXED != 0
     }
 
+    /// If this flag is set, then the io_uring_enter(2) system call supports passing in an extended
+    /// argument instead of just the sigset_t of earlier kernels. This extended argument is of
+    /// type struct io_uring_getevents_arg and allows the caller to pass in both a sigset_t and
+    /// a timeout argument for waiting on events. The struct layout is as follows:
+    ///
+    /// // struct io_uring_getevents_arg {
+    /// //     __u64 sigmask;
+    /// //     __u32 sigmask_sz;
+    /// //     __u32 pad;
+    /// //     __u64 ts;
+    /// // };
+    ///
+    /// and a pointer to this struct must be passed in if IORING_ENTER_EXT_ARG is set in the flags
+    /// for the enter system call. Available since kernel 5.11.
     #[cfg(feature = "unstable")]
     pub fn is_feature_ext_arg(&self) -> bool {
         self.0.features & sys::IORING_FEAT_EXT_ARG != 0
     }
 
+    /// If this flag is set, io_uring is using native workers for its async helpers. Previous
+    /// kernels used kernel threads that assumed the identity of the original io_uring owning task,
+    /// but later kernels will actively create what looks more like regular process threads
+    /// instead. Available since kernel 5.12.
     #[cfg(feature = "unstable")]
     pub fn is_feature_native_workers(&self) -> bool {
         self.0.features & sys::IORING_FEAT_NATIVE_WORKERS != 0
