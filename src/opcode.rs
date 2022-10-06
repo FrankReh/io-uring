@@ -645,7 +645,7 @@ opcode!(
 
         let mut sqe = sqe_zeroed();
         sqe.opcode = Self::CODE;
-        assign_fd!(sqe.fd = fd);
+        assign_fd!(sqe.fd = fd); // TODO maybe 'direct fd' too?
         sqe.__bindgen_anon_2.addr = addr as _;
         sqe.__bindgen_anon_1.off = addrlen as _;
         Entry(sqe)

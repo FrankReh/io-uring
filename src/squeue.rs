@@ -224,6 +224,8 @@ impl<E: EntryMarker> SubmissionQueue<'_, E> {
         }
     }
 
+    // TODO should the IORING_SQ_TASKRUN, since 5.19, also be made public here?
+
     /// Get the total number of entries in the submission queue ring buffer.
     #[inline]
     pub fn capacity(&self) -> usize {
