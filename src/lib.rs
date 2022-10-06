@@ -508,6 +508,35 @@ impl Parameters {
         self.0.features & sys::IORING_FEAT_NATIVE_WORKERS != 0
     }
 
+    /// If this flag is set, then io_uring supports a variety of features related to fixed files and
+    /// buffers. In particular, it indicates that registered buffers can be updated in-place,
+    /// whereas before the full set would have to be unregistered first. Available since kernel 5.13.
+    #[cfg(feature = "unstable")]
+    pub fn is_feature_rsrc_tags(&self) -> bool {
+        self.0.features & sys::IORING_FEAT_RSRC_TAGS != 0
+    }
+
+    /// If this flag is set, then io_uring supports setting IOSQE_CQE_SKIP_SUCCESS in the submitted
+    /// SQE, indicating that no CQE should be generated for this SQE if it executes normally. If an
+    /// error happens processing the SQE, a CQE with the appropriate error value will still be
+    /// generated. Available since kernel 5.17.
+    #[cfg(feature = "unstable")]
+    pub fn is_feature_cqe_skip(&self) -> bool {
+        self.0.features & sys::IORING_FEAT_CQE_SKIP != 0
+    }
+
+    /// If this flag is set, then io_uring supports sane assignment of files for SQEs that have
+    /// dependencies. For example, if a chain of SQEs are submitted with IOSQE_IO_LINK, then
+    /// kernels without this flag will prepare the file for each link upfront. If a previous link
+    /// opens a file with a known index, eg if direct descriptors are used with open or accept,
+    /// then file assignment needs to happen post execution of that SQE. If this flag is set, then
+    /// the kernel will defer file assignment until execution of a given request is started.
+    /// Available since kernel 5.17.
+    #[cfg(feature = "unstable")]
+    pub fn is_feature_linked_file(&self) -> bool {
+        self.0.features & sys::IORING_FEAT_LINKED_FILE != 0
+    }
+
     /// The number of submission queue entries allocated.
     pub fn sq_entries(&self) -> u32 {
         self.0.sq_entries
@@ -520,6 +549,7 @@ impl Parameters {
 }
 
 impl std::fmt::Debug for Parameters {
+    #[cfg(not(feature = "unstable"))]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Parameters")
             .field("is_setup_sqpoll", &self.is_setup_sqpoll())
@@ -533,6 +563,31 @@ impl std::fmt::Debug for Parameters {
                 &self.is_feature_cur_personality(),
             )
             .field("is_feature_poll_32bits", &self.is_feature_poll_32bits())
+            .field("sq_entries", &self.0.sq_entries)
+            .field("cq_entries", &self.0.cq_entries)
+            .finish()
+    }
+    #[cfg(feature = "unstable")]
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Parameters")
+            .field("is_setup_sqpoll", &self.is_setup_sqpoll())
+            .field("is_setup_iopoll", &self.is_setup_iopoll())
+            .field("is_feature_single_mmap", &self.is_feature_single_mmap())
+            .field("is_feature_nodrop", &self.is_feature_nodrop())
+            .field("is_feature_submit_stable", &self.is_feature_submit_stable())
+            .field("is_feature_rw_cur_pos", &self.is_feature_rw_cur_pos())
+            .field(
+                "is_feature_cur_personality",
+                &self.is_feature_cur_personality(),
+            )
+            .field("is_feature_poll_32bits", &self.is_feature_poll_32bits())
+
+            .field("is_feature_fast_poll", &self.is_feature_fast_poll())
+            .field("is_feature_sqpoll_nonfixed", &self.is_feature_sqpoll_nonfixed())
+            .field("is_feature_ext_arg", &self.is_feature_ext_arg())
+            .field("is_feature_native_workers", &self.is_feature_native_workers())
+            .field("is_feature_rsrc_tags", &self.is_feature_rsrc_tags())
+            .field("is_feature_cqe_skip", &self.is_feature_cqe_skip())
             .field("sq_entries", &self.0.sq_entries)
             .field("cq_entries", &self.0.cq_entries)
             .finish()
