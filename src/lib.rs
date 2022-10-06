@@ -319,7 +319,7 @@ impl<S: squeue::EntryMarker, C: cqueue::EntryMarker> Builder<S, C> {
     /// When using this, you _must_ register all file descriptors with the [`Submitter`] via
     /// [`Submitter::register_files`].
     ///
-    /// This requires root priviliges.
+    /// This requires root privileges.
     pub fn setup_sqpoll(&mut self, idle: u32) -> &mut Self {
         self.params.flags |= sys::IORING_SETUP_SQPOLL;
         self.params.sq_thread_idle = idle;
