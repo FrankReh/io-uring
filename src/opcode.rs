@@ -562,17 +562,19 @@ opcode!(
         addr: { *mut libc::sockaddr },
         addrlen: { *mut libc::socklen_t },
         ;;
-        flags: i32 = 0
+        flags: i32 = 0,
+        ioprio: u16 = 0,
     }
 
     pub const CODE = sys::IORING_OP_ACCEPT;
 
     pub fn build(self) -> Entry {
-        let Accept { fd, addr, addrlen, flags } = self;
+        let Accept { fd, addr, addrlen, flags, ioprio } = self;
 
         let mut sqe = sqe_zeroed();
         sqe.opcode = Self::CODE;
         assign_fd!(sqe.fd = fd);
+        sqe.ioprio = ioprio as _;
         sqe.__bindgen_anon_2.addr = addr as _;
         sqe.__bindgen_anon_1.addr2 = addrlen as _;
         sqe.__bindgen_anon_3.accept_flags = flags as _;
