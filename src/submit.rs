@@ -64,6 +64,26 @@ impl<'a> Submitter<'a> {
         }
     }
 
+    /// CQ ring is overflown
+    #[inline]
+    fn sq_cq_overflow(&self) -> bool {
+        unsafe {
+            atomic::fence(atomic::Ordering::SeqCst); // Refer to comment in squeue.rs for same code
+            (*self.sq_flags).load(atomic::Ordering::Acquire) & sys::IORING_SQ_CQ_OVERFLOW != 0
+        }
+    }
+
+    // TODO Not clear how this flag would help the submit logic below.
+    // An interesting feature available since 5.19. Don't quite know how to incorporate it here.
+    // /// task should enter the kernel
+    // #[inline]
+    // fn sq_taskrun(&self) -> bool {
+    //     unsafe {
+    //         atomic::fence(atomic::Ordering::SeqCst); // Refer to comment in squeue.rs for same code
+    //         (*self.sq_flags).load(atomic::Ordering::Acquire) & sys::IORING_SQ_TASKRUN != 0
+    //     }
+    // }
+
     /// Initiate and/or complete asynchronous I/O. This is a low-level wrapper around
     /// `io_uring_enter` - see `man io_uring_enter` (or [its online
     /// version](https://manpages.debian.org/unstable/liburing-dev/io_uring_enter.2.en.html) for
@@ -115,7 +135,11 @@ impl<'a> Submitter<'a> {
         let len = self.sq_len();
         let mut flags = 0;
 
-        if want > 0 || self.params.is_setup_iopoll() {
+        // TODO is this the right way to handle the overflow, from this crate's perspective?
+        // Will need to ask the maintainer.
+        // Was
+        //    if want > 0 || self.params.is_setup_iopoll() {..}
+        if want > 0 || self.params.is_setup_iopoll() || self.sq_cq_overflow() {
             flags |= sys::IORING_ENTER_GETEVENTS;
         }
 
@@ -141,7 +165,9 @@ impl<'a> Submitter<'a> {
         let len = self.sq_len();
         let mut flags = sys::IORING_ENTER_EXT_ARG;
 
-        if want > 0 {
+        //if want > 0 {
+        // TODO why is this test different from one above?
+        if want > 0 || self.sq_cq_overflow() {
             flags |= sys::IORING_ENTER_GETEVENTS;
         }
 
