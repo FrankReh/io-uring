@@ -183,7 +183,9 @@ impl<E: EntryMarker> Drop for CompletionQueue<'_, E> {
     fn drop(&mut self) {
         unsafe {
             atomic::fence(atomic::Ordering::SeqCst); // TODO is this required?
-            &*self.queue.head }.store(self.head, atomic::Ordering::Release);
+            &*self.queue.head
+        }
+        .store(self.head, atomic::Ordering::Release);
     }
 }
 

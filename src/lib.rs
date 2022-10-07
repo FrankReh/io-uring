@@ -581,11 +581,16 @@ impl std::fmt::Debug for Parameters {
                 &self.is_feature_cur_personality(),
             )
             .field("is_feature_poll_32bits", &self.is_feature_poll_32bits())
-
             .field("is_feature_fast_poll", &self.is_feature_fast_poll())
-            .field("is_feature_sqpoll_nonfixed", &self.is_feature_sqpoll_nonfixed())
+            .field(
+                "is_feature_sqpoll_nonfixed",
+                &self.is_feature_sqpoll_nonfixed(),
+            )
             .field("is_feature_ext_arg", &self.is_feature_ext_arg())
-            .field("is_feature_native_workers", &self.is_feature_native_workers())
+            .field(
+                "is_feature_native_workers",
+                &self.is_feature_native_workers(),
+            )
             .field("is_feature_rsrc_tags", &self.is_feature_rsrc_tags())
             .field("is_feature_cqe_skip", &self.is_feature_cqe_skip())
             .field("sq_entries", &self.0.sq_entries)
