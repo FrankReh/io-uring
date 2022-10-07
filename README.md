@@ -1,3 +1,7 @@
+# A fork meant to support work in my forked tokio-uring repo
+
+This branch will likely be dropped in the near future.
+
 # Linux IO Uring
 [![github actions](https://github.com/tokio-rs/io-uring/workflows/ci/badge.svg)](https://github.com/tokio-rs/io-uring/actions)
 [![crates](https://img.shields.io/crates/v/io-uring.svg)](https://crates.io/crates/io-uring)
