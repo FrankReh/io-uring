@@ -583,6 +583,34 @@ opcode!(
 );
 
 opcode!(
+    /// Accept multiple new connections on a socket.
+    pub struct AcceptMulti {
+        fd: { impl sealed::UseFixed },
+        ;;
+        flags: i32 = 0,
+        ioprio: u16 = 0,
+    }
+
+    pub const CODE = sys::IORING_OP_ACCEPT;
+
+    pub fn build(self) -> Entry {
+        let AcceptMulti { fd, flags, mut ioprio } = self;
+        ioprio |= sys::IORING_ACCEPT_MULTISHOT as u16;
+
+        let mut sqe = sqe_zeroed();
+        sqe.opcode = Self::CODE;
+        assign_fd!(sqe.fd = fd);
+        sqe.ioprio = ioprio as _;
+        // No out SockAddr is passed for the multishot accept case.
+        // The user will have to perform a syscall to get the remote address.
+        sqe.__bindgen_anon_2.addr = 0 as _;
+        sqe.__bindgen_anon_1.addr2 = 0 as _;
+        sqe.__bindgen_anon_3.accept_flags = flags as _;
+        Entry(sqe)
+    }
+);
+
+opcode!(
     /// Attempt to cancel an already issued request.
     pub struct AsyncCancel {
         user_data: { u64 }
